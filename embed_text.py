@@ -1,7 +1,7 @@
-import clean_corpus
 import pandas as pd
 import gensim.downloader as api
 import statistics
+import pickle
 
 model = api.load("glove-wiki-gigaword-300")
 
@@ -26,10 +26,9 @@ afinn_wl_df = pd.read_csv(afinn_wl_url,
 # Negative values are negative words and positive values are positive words.
 # There are 2477 words in total. This is gonna be fun to run.
 
-# I just need to clean up the corpus, lowercase all words, remove stop words
-# and punctuation. I also need to make sure words already in the dictionary are
-# not being included in the final analysis.
-corpus = clean_corpus.corpusFiltered
+corpus = open("data/corpusFiltered_08292022.bin", "rb")
+corpus = pickle.load(corpus, encoding="bytes")
+corpus = list(set(corpus))
 
 positive = afinn_wl_df[afinn_wl_df["value"] > 0]
 negative = afinn_wl_df[afinn_wl_df["value"] < 0]
@@ -42,7 +41,7 @@ for w in corpus:
     negativeSim = []
 
     # Rough indicator of percentage progress
-    if corpus.index(w) % 465 == 0:
+    if corpus.index(w) % 340 == 0:
         percentage += 1
         print("%i percent completed" % percentage)
 
@@ -77,6 +76,6 @@ for w in corpus:
 
 df = pd.DataFrame(corpusSimilarity)
 
-df.to_csv("data/wordsSimilarity_v1_08292022.csv")
+df.to_csv("data/wordsSimilarity_v2_08292022.csv")
 
 df.sort_values(by=['totalValue'])
