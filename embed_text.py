@@ -1,3 +1,4 @@
+from collections import Counter
 import pandas as pd
 import gensim.downloader as api
 import statistics
@@ -39,54 +40,77 @@ bingNeg = bingNeg.read().split("\n")
 
 corpus = open("data/corpusFiltered_08292022.bin", "rb")
 corpus = pickle.load(corpus, encoding="bytes")
+counts = Counter(corpus)
 corpus = list(set(corpus))
 
 positive = afinn_wl_df[afinn_wl_df["value"] > 0]
 negative = afinn_wl_df[afinn_wl_df["value"] < 0]
 
-corpusSimilarity = {'word': [], 'totalValue': [],
-                    'positive': [], 'negative': []}
-percentage = 0
-for w in corpus:
-    positiveSim = []
-    negativeSim = []
 
-    # Rough indicator of percentage progress
-    if corpus.index(w) % 340 == 0:
-        percentage += 1
-        print("%i percent completed" % percentage)
+def calcSimilarity(corpus, positive, negative, wordCounts):
+    corpusSimilarity = {'word': [], 'totalValue': [],
+                        'positive': [], 'negative': [], 'count': []}
+    percentage = 0
+    fraction = len(corpus) // 100
+    for w in corpus:
+        positiveSim = []
+        negativeSim = []
+        # Rough indicator of percentage progress
+        if corpus.index(w) % fraction == 0:
+            percentage += 1
+            print("%i percent completed" % percentage)
 
-    for p in positive['term']:
-        try:
-            positiveSim.append(model.similarity(w, p))
-        except KeyError:
+        # Skip calculating similarity if word is in sentiment dictionary
+        if (w in positive) or (w in negative):
+            print("Word %s is in the sentiment dictionary. Skipping." % w)
             continue
 
-    for n in negative['term']:
-        try:
-            negativeSim.append(model.similarity(w, n))
-        except KeyError:
-            continue
+        # Calculate similarity to positive words, if either word is not found,
+        # then skip that word
+        for p in positive:
+            try:
+                positiveSim.append(model.similarity(w, p))
+            except KeyError:
+                continue
 
-    # Append dictionary
-    if len(positiveSim) < 1:
-        meanPositive = 0
-    else:
-        meanPositive = statistics.mean(positiveSim)
+        # Calculate similarity to negative words, if either word is not found,
+        # then skip that word
+        for n in negative:
+            try:
+                negativeSim.append(model.similarity(w, n))
+            except KeyError:
+                continue
 
-    if len(negativeSim) < 1:
-        meanNegative = 0
-    else:
-        meanNegative = statistics.mean(negativeSim)
-    diff = meanPositive - meanNegative
+        # Append dictionary
+        if len(positiveSim) < 1:
+            meanPositive = 0
+        else:
+            meanPositive = statistics.mean(positiveSim)
 
-    corpusSimilarity["word"].append(w)
-    corpusSimilarity["totalValue"].append(diff)
-    corpusSimilarity["positive"].append(meanPositive)
-    corpusSimilarity["negative"].append(meanNegative)
+        if len(negativeSim) < 1:
+            meanNegative = 0
+        else:
+            meanNegative = statistics.mean(negativeSim)
+        diff = meanPositive - meanNegative
 
-df = pd.DataFrame(corpusSimilarity)
+        corpusSimilarity["word"].append(w)
+        corpusSimilarity["totalValue"].append(diff)
+        corpusSimilarity["positive"].append(meanPositive)
+        corpusSimilarity["negative"].append(meanNegative)
+        corpusSimilarity["count"].append(wordCounts[str(w)])
 
-df.to_csv("data/wordsSimilarity_v2_08292022.csv")
+    df = pd.DataFrame(corpusSimilarity)
 
-df.sort_values(by=['totalValue'])
+    return df
+
+
+# Use Afinn sentiment dictionary
+afinnSim = calcSimilarity(corpus, list(
+    positive['term']), list(negative['term']), counts)
+afinnSim.to_csv("data/wordsSimilarityAfinn_v3_08302022.csv")
+afinnSim.sort_values(by=['totalValue'])
+
+# Use Bing Sentiment Dictionary
+bingSim = calcSimilarity(corpus, bingPos, bingNeg, counts)
+bingSim.to_csv("data/wordsSimilarityBing_v1_08302022.csv")
+bingSim.sort_values(by=['negative'])
