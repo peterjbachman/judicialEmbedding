@@ -28,6 +28,15 @@ afinn_wl_df = pd.read_csv(afinn_wl_url,
 # Negative values are negative words and positive values are positive words.
 # There are 2477 words in total. This is gonna be fun to run.
 
+# Bing Sentiment Dictionary
+bingPos = open("data/positive-words.txt", "r+")
+bingPos = bingPos.read().split("\n")
+
+bingNeg = open("data/negative-words.txt", "r+")
+bingNeg = bingNeg.read().split("\n")
+
+# Oh also I need to remove any words that are in either dictionary
+
 corpus = open("data/corpusFiltered_08292022.bin", "rb")
 corpus = pickle.load(corpus, encoding="bytes")
 corpus = list(set(corpus))
