@@ -15,6 +15,8 @@ model = api.load("glove-wiki-gigaword-300")
 # len(A)  len(b)
 
 # Emotion Dictionary
+# I may try and find another one or two to see if there are differences
+# I could also try weighting the similarity based on the value of the sentiment
 afinn_wl_url = ('https://raw.githubusercontent.com'
                 '/fnielsen/afinn/master/afinn/data/AFINN-111.txt')
 
