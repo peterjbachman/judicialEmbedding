@@ -1,8 +1,12 @@
+"""
+Creates the new measure of word embeddings
+"""
+
 from collections import Counter
-import pandas as pd
-import gensim.downloader as api
 import statistics
 import pickle
+import pandas as pd
+import gensim.downloader as api
 
 model = api.load("glove-wiki-gigaword-300")
 
@@ -18,13 +22,17 @@ model = api.load("glove-wiki-gigaword-300")
 # Emotion Dictionary
 # I may try and find another one or two to see if there are differences
 # I could also try weighting the similarity based on the value of the sentiment
-afinn_wl_url = ('https://raw.githubusercontent.com'
-                '/fnielsen/afinn/master/afinn/data/AFINN-111.txt')
+afinn_wl_url = (
+    "https://raw.githubusercontent.com"
+    "/fnielsen/afinn/master/afinn/data/AFINN-111.txt"
+)
 
-afinn_wl_df = pd.read_csv(afinn_wl_url,
-                          header=None,  # no column names
-                          sep='\t',  # tab sepeated
-                          names=['term', 'value'])  # new column names
+afinn_wl_df = pd.read_csv(
+    afinn_wl_url,
+    header=None,  # no column names
+    sep="\t",  # tab sepeated
+    names=["term", "value"],
+)  # new column names
 
 # Negative values are negative words and positive values are positive words.
 # There are 2477 words in total. This is gonna be fun to run.
@@ -48,8 +56,13 @@ negative = afinn_wl_df[afinn_wl_df["value"] < 0]
 
 
 def calcSimilarity(corpus, positive, negative, wordCounts):
-    corpusSimilarity = {'word': [], 'totalValue': [],
-                        'positive': [], 'negative': [], 'count': []}
+    corpusSimilarity = {
+        "word": [],
+        "totalValue": [],
+        "positive": [],
+        "negative": [],
+        "count": [],
+    }
     percentage = 0
     fraction = len(corpus) // 100
     for w in corpus:
@@ -105,12 +118,13 @@ def calcSimilarity(corpus, positive, negative, wordCounts):
 
 
 # Use Afinn sentiment dictionary
-afinnSim = calcSimilarity(corpus, list(
-    positive['term']), list(negative['term']), counts)
+afinnSim = calcSimilarity(
+    corpus, list(positive["term"]), list(negative["term"]), counts
+)
 afinnSim.to_csv("data/wordsSimilarityAfinn_v3_08302022.csv")
-afinnSim.sort_values(by=['totalValue'])
+afinnSim.sort_values(by=["totalValue"])
 
 # Use Bing Sentiment Dictionary
 bingSim = calcSimilarity(corpus, bingPos, bingNeg, counts)
 bingSim.to_csv("data/wordsSimilarityBing_v1_08302022.csv")
-bingSim.sort_values(by=['negative'])
+bingSim.sort_values(by=["negative"])
